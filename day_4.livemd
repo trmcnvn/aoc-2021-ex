@@ -1,0 +1,77 @@
+# Day 4
+
+## Setup
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.4.1"}
+])
+```
+
+```elixir
+input = Kino.Input.textarea("Input")
+```
+
+```elixir
+input =
+  input
+  |> Kino.Input.read()
+  |> String.split("\n\n", trim: true)
+
+# Split up the bingo callouts
+callouts = input |> Enum.at(0) |> String.split(",", trim: true) |> Enum.map(&String.to_integer/1)
+# Build the boards into a concat array of x, y axis
+boards =
+  input
+  |> Enum.drop(1)
+  |> Enum.map(
+    &(&1
+      |> String.split("\n", trim: true)
+      |> Enum.map(fn x ->
+        String.split(x, " ", trim: true)
+        |> Enum.map(fn y -> String.to_integer(y) end)
+      end))
+  )
+  |> Enum.map(&(&1 |> Enum.concat(Enum.map(Enum.zip(&1), fn x -> Tuple.to_list(x) end))))
+```
+
+## Part 1
+
+```elixir
+defmodule Bingo do
+  defp callout(board, input, index) do
+    if Enum.any?(board, fn x -> Enum.empty?(x) end) do
+      sum =
+        board
+        |> Enum.take(5)
+        |> Enum.reduce(0, fn x, acc -> acc + Enum.sum(x) end)
+
+      %{index: index, score: sum * Enum.at(input, index - 1)}
+    else
+      board
+      |> Enum.map(&(&1 |> Enum.filter(fn x -> x != Enum.at(input, index) end)))
+      |> callout(input, index + 1)
+    end
+  end
+
+  def play(board, input) do
+    callout(board, input, 0)
+  end
+end
+
+winning_board =
+  boards
+  |> Enum.map(fn x -> Bingo.play(x, callouts) end)
+  |> Enum.min_by(fn x -> x.index end)
+
+winning_board.score
+```
+
+## Part 2
+
+```elixir
+winning_board =
+  boards
+  |> Enum.map(fn x -> Bingo.play(x, callouts) end)
+  |> Enum.max_by(fn x -> x.index end)
+```

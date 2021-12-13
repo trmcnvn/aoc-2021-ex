@@ -1,0 +1,75 @@
+# Day 3
+
+## Setup
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.4.1"}
+])
+```
+
+```elixir
+input = Kino.Input.textarea("Input")
+```
+
+```elixir
+input =
+  input
+  |> Kino.Input.read()
+  |> String.split("\n", trim: true)
+  |> Enum.map(&String.codepoints/1)
+```
+
+## Part 1
+
+```elixir
+defmodule Power do
+  def count_bits(input) do
+    input |> String.graphemes() |> Enum.frequencies()
+  end
+
+  def rank_bits(%{"0" => zero, "1" => one}) when zero > one, do: [0, 1]
+  def rank_bits(%{"0" => _, "1" => _}), do: [1, 0]
+  def rank_bits(%{"1" => _}), do: [1, 0]
+  def rank_bits(%{"0" => _}), do: [0, 1]
+end
+
+input
+|> Enum.zip_with(&Enum.join/1)
+|> Enum.map(&(&1 |> Power.count_bits() |> Power.rank_bits()))
+|> Enum.zip_with(&Enum.join/1)
+|> Enum.map(&(&1 |> String.to_integer(2)))
+|> Enum.product()
+```
+
+## Part 2
+
+```elixir
+defmodule LifeSupport do
+  def oxygen_rating([head | []], _, _), do: head |> Enum.join() |> String.to_integer(2)
+
+  def oxygen_rating(input, bit_to_select, column) do
+    bits =
+      input
+      |> Enum.zip_with(&Enum.join/1)
+      |> Enum.map(&(&1 |> Power.count_bits() |> Power.rank_bits()))
+      |> Enum.map(&Enum.at(&1, bit_to_select))
+
+    input =
+      input
+      |> Enum.filter(fn x ->
+        y = x |> Enum.join()
+        String.to_integer(String.at(y, column)) == Enum.at(bits, column)
+      end)
+
+    oxygen_rating(input, bit_to_select, column + 1)
+  end
+
+  def co2_rating(input, column), do: oxygen_rating(input, 1, column)
+end
+
+oxy = input |> LifeSupport.oxygen_rating(0, 0)
+co2 = input |> LifeSupport.co2_rating(0)
+
+oxy * co2
+```

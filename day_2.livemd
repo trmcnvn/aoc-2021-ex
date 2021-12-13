@@ -1,0 +1,87 @@
+# Day 2
+
+## Setup
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.4.1"}
+])
+```
+
+```elixir
+input = Kino.Input.textarea("Input")
+```
+
+```elixir
+input =
+  input
+  |> Kino.Input.read()
+  |> String.split("\n", trim: true)
+  |> Enum.map(fn x -> String.split(x, " ") end)
+```
+
+## Part 1
+
+```elixir
+defmodule Pilot do
+  defp move([], ctx), do: ctx
+
+  defp move(["forward" | steps], ctx) do
+    %{depth: ctx.depth, x_pos: ctx.x_pos + Enum.at(steps, 0)}
+  end
+
+  defp move(["down" | steps], ctx) do
+    %{depth: ctx.depth + Enum.at(steps, 0), x_pos: ctx.x_pos}
+  end
+
+  defp move(["up" | steps], ctx) do
+    %{depth: ctx.depth - Enum.at(steps, 0), x_pos: ctx.x_pos}
+  end
+
+  def process_movement([], ctx), do: ctx
+
+  def process_movement([[dir | steps] | tail], ctx) do
+    ctx = move([dir, String.to_integer(Enum.at(steps, 0))], ctx)
+    process_movement(tail, ctx)
+  end
+end
+
+# {depth, hor} = Pilot.move(input)
+# depth * hor
+state = Pilot.process_movement(input, %{depth: 0, x_pos: 0})
+state.depth * state.x_pos
+```
+
+## Part 2
+
+```elixir
+defmodule Pilot do
+  defp move([], ctx), do: ctx
+
+  defp move(["forward" | steps], ctx) do
+    %{
+      depth: ctx.depth + ctx.aim * Enum.at(steps, 0),
+      x_pos: ctx.x_pos + Enum.at(steps, 0),
+      aim: ctx.aim
+    }
+  end
+
+  defp move(["down" | steps], ctx) do
+    %{depth: ctx.depth, x_pos: ctx.x_pos, aim: ctx.aim + Enum.at(steps, 0)}
+  end
+
+  defp move(["up" | steps], ctx) do
+    %{depth: ctx.depth, x_pos: ctx.x_pos, aim: ctx.aim - Enum.at(steps, 0)}
+  end
+
+  def process_movement([], ctx), do: ctx
+
+  def process_movement([[dir | steps] | tail], ctx) do
+    ctx = move([dir, String.to_integer(Enum.at(steps, 0))], ctx)
+    process_movement(tail, ctx)
+  end
+end
+
+state = Pilot.process_movement(input, %{depth: 0, x_pos: 0, aim: 0})
+state.x_pos * state.depth
+```
